@@ -11,6 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const logger = require('../utils/logger');
 const { sanitizeInput, validateFormData, validateImageExtension, validateFilePath } = require('../utils/validation');
+const analytics = require('../utils/analytics');
 
 const router = express.Router();
 
@@ -60,6 +61,18 @@ router.get('/', (req, res, next) => {
     res.render('index', { title: 'PhotoGallery', version: '0.1.0' });
   } catch (error) {
     logger.error('Error rendering home page:', error.message);
+    next(error);
+  }
+});
+
+/**
+ * GET /dashboard - Analytics dashboard page
+ */
+router.get('/dashboard', (req, res, next) => {
+  try {
+    res.sendFile(path.join(__dirname, '../public/analytics.html'));
+  } catch (error) {
+    logger.error('Error rendering dashboard:', error.message);
     next(error);
   }
 });
@@ -179,6 +192,139 @@ router.get('/all', async (req, res, next) => {
     res.status(500).json({
       error: 'fetch_failed',
       message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch images'
+    });
+  }
+});
+
+/**
+ * Analytics Endpoints
+ */
+
+/**
+ * GET /analytics/summary - Get comprehensive analytics summary
+ */
+router.get('/analytics/summary', async (req, res, next) => {
+  try {
+    const summary = await analytics.getAnalyticsSummary();
+    
+    res.status(200).json({
+      success: true,
+      data: summary,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error getting analytics summary:', error.message);
+    
+    res.status(500).json({
+      error: 'analytics_failed',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch analytics'
+    });
+  }
+});
+
+/**
+ * GET /analytics/stats - Get database statistics
+ */
+router.get('/analytics/stats', async (req, res, next) => {
+  try {
+    const dbStats = await analytics.getDatabaseStats();
+    const storageStats = await analytics.getStorageStats();
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        database: dbStats,
+        storage: storageStats
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error getting stats:', error.message);
+    
+    res.status(500).json({
+      error: 'stats_failed',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch statistics'
+    });
+  }
+});
+
+/**
+ * GET /analytics/usage - Get usage statistics by time period
+ * Query params: period (hourly, daily, weekly, monthly) - default: daily
+ */
+router.get('/analytics/usage', async (req, res, next) => {
+  try {
+    const period = req.query.period || 'daily';
+    const validPeriods = ['hourly', 'daily', 'weekly', 'monthly'];
+    
+    if (!validPeriods.includes(period)) {
+      return res.status(400).json({
+        error: 'invalid_period',
+        message: `Period must be one of: ${validPeriods.join(', ')}`
+      });
+    }
+
+    const usageStats = await analytics.getUsageStats(period);
+    
+    res.status(200).json({
+      success: true,
+      period: period,
+      count: usageStats.length,
+      data: usageStats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error getting usage stats:', error.message);
+    
+    res.status(500).json({
+      error: 'usage_failed',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch usage statistics'
+    });
+  }
+});
+
+/**
+ * GET /analytics/authors - Get author statistics
+ */
+router.get('/analytics/authors', async (req, res, next) => {
+  try {
+    const authorStats = await analytics.getAuthorStats();
+    
+    res.status(200).json({
+      success: true,
+      count: authorStats.length,
+      data: authorStats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error getting author stats:', error.message);
+    
+    res.status(500).json({
+      error: 'authors_failed',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch author statistics'
+    });
+  }
+});
+
+/**
+ * GET /analytics/timeline - Get timeline statistics (last 30 days)
+ */
+router.get('/analytics/timeline', async (req, res, next) => {
+  try {
+    const timelineStats = await analytics.getTimelineStats();
+    
+    res.status(200).json({
+      success: true,
+      count: timelineStats.length,
+      data: timelineStats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error getting timeline stats:', error.message);
+    
+    res.status(500).json({
+      error: 'timeline_failed',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Failed to fetch timeline'
     });
   }
 });
