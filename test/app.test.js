@@ -12,11 +12,9 @@ describe('App Integration Tests', () => {
   let mockDb;
 
   beforeEach(() => {
-    // Mock database
+    // Mock database with async query function
     mockDb = {
-      connection: {
-        query: sinon.stub()
-      }
+      query: sinon.stub().resolves([])
     };
 
     // Create app with proper configuration
@@ -81,13 +79,14 @@ describe('App Integration Tests', () => {
 
   describe('Get All Images Route', () => {
     it('should call database query', (done) => {
-      mockDb.connection.query.yields(null, [], []);
+      mockDb.query.resolves([]);
 
       request(app)
         .get('/all')
         .expect(200)
         .expect((res) => {
-          expect(mockDb.connection.query.calledOnce).to.be.true;
+          expect(mockDb.query.calledOnce).to.be.true;
+          expect(res.body.success).to.be.true;
         })
         .end(done);
     });
@@ -98,24 +97,30 @@ describe('App Integration Tests', () => {
         { id: 2, name: 'Image 2', path: 'image2.jpg' }
       ];
 
-      mockDb.connection.query.yields(null, mockImages, []);
+      mockDb.query.resolves(mockImages);
 
       request(app)
         .get('/all')
         .expect(200)
         .expect((res) => {
-          expect(res.body).to.deep.equal(mockImages);
+          expect(res.body.success).to.be.true;
+          expect(res.body.count).to.equal(2);
+          expect(res.body.data).to.deep.equal(mockImages);
         })
         .end(done);
     });
 
     it('should handle database errors gracefully', (done) => {
       const dbError = new Error('Connection failed');
-      mockDb.connection.query.yields(dbError);
+      mockDb.query.rejects(dbError);
 
       request(app)
         .get('/all')
-        .expect(500, done);
+        .expect(500)
+        .expect((res) => {
+          expect(res.body.error).to.equal('fetch_failed');
+        })
+        .end(done);
     });
   });
 });

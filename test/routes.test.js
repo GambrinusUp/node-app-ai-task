@@ -15,11 +15,9 @@ describe('Routes - Index Router', () => {
   let app;
 
   beforeEach(() => {
-    // Mock database connection
+    // Mock database with async API
     mockDb = {
-      connection: {
-        query: sinon.stub()
-      }
+      query: sinon.stub()
     };
 
     // Create Express app
@@ -55,8 +53,8 @@ describe('Routes - Index Router', () => {
       res.status(err.status || 500).send(err.message);
     });
 
-    // Mock file system
-    sinon.stub(fs, 'writeFileSync');
+    // Mock file system for writeFile
+    sinon.stub(fs.promises, 'writeFile').resolves();
   });
 
   afterEach(() => {
@@ -80,13 +78,20 @@ describe('Routes - Index Router', () => {
         .field('name', 'Test Image')
         .field('description', 'A test image')
         .field('author', 'Test Author')
-        .expect(400, done);
+        .expect(400)
+        .expect((res) => {
+          expect(res.body.error).to.equal('image required');
+        })
+        .end(done);
     });
 
     it('should return 400 when no fields are provided', (done) => {
       request(app)
         .post('/new')
         .expect(400)
+        .expect((res) => {
+          expect(res.body.error).to.exist;
+        })
         .end(done);
     });
   });
@@ -98,35 +103,43 @@ describe('Routes - Index Router', () => {
         { id: 2, name: 'Image 2', description: 'Desc 2', author: 'Author 2', path: 'path2.jpg' }
       ];
 
-      mockDb.connection.query.yields(null, mockImages, []);
+      mockDb.query.resolves(mockImages);
 
       request(app)
         .get('/all')
         .expect(200)
         .expect((res) => {
-          expect(res.body).to.deep.equal(mockImages);
-          expect(mockDb.connection.query.calledOnce).to.be.true;
+          expect(res.body.success).to.be.true;
+          expect(res.body.count).to.equal(2);
+          expect(res.body.data).to.deep.equal(mockImages);
+          expect(mockDb.query.calledOnce).to.be.true;
         })
         .end(done);
     });
 
     it('should handle database errors when fetching images', (done) => {
       const dbError = new Error('Database query failed');
-      mockDb.connection.query.yields(dbError);
+      mockDb.query.rejects(dbError);
 
       request(app)
         .get('/all')
-        .expect(500, done);
+        .expect(500)
+        .expect((res) => {
+          expect(res.body.error).to.equal('fetch_failed');
+        })
+        .end(done);
     });
 
     it('should return empty array for no images', (done) => {
-      mockDb.connection.query.yields(null, [], []);
+      mockDb.query.resolves([]);
 
       request(app)
         .get('/all')
         .expect(200)
         .expect((res) => {
-          expect(res.body).to.deep.equal([]);
+          expect(res.body.success).to.be.true;
+          expect(res.body.count).to.equal(0);
+          expect(res.body.data).to.deep.equal([]);
         })
         .end(done);
     });

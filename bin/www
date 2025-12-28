@@ -9,7 +9,8 @@ let debug = require('debug')('node-app:server');
 let http = require('http');
 let db = require('../db');
 
-db.connection.connect();
+// Database connection pool is initialized lazily on first query
+// No need to explicitly connect - the pool manages connections automatically
 
 /**
  * Get port from environment and store in Express.
