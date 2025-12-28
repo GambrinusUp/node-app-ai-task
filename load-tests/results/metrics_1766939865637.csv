@@ -1,0 +1,15 @@
+Метрика,Значение
+Total Requests,1000
+RPS (Mean),250.00
+RPS (p50),35.00
+RPS (p90),729.00
+RPS (p99),729.00
+Latency Mean (ms),29.92
+Latency p50 (ms),13
+Latency p90 (ms),16
+Latency p99 (ms),31
+Latency Min (ms),10
+Latency Max (ms),1615
+Errors,0
+Timeouts,0
+Throughput Mean (KB/s),106.69

@@ -1,0 +1,73 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    - duration: 30
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 60
+      arrivalRate: 50
+      name: "Sustained load"
+    - duration: 30
+      arrivalRate: 100
+      name: "Spike"
+    - duration: 30
+      arrivalRate: 10
+      name: "Cool down"
+
+scenarios:
+  - name: "PhotoGallery Load Test"
+    flow:
+      # Home page load
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+            - contentType: html
+          capture:
+            - json: "$.title"
+              as: "pageTitle"
+          think: 2
+
+      # Fetch all images
+      - get:
+          url: "/all"
+          expect:
+            - statusCode: 200
+            - contentType: json
+          capture:
+            - json: "$[0].id"
+              as: "imageId"
+          think: 3
+
+      # Simulate image upload (will fail but tests the endpoint)
+      - post:
+          url: "/new"
+          json:
+            name: "Load Test Image"
+            description: "Test image from Artillery"
+            author: "Artillery Load Tester"
+          expect:
+            - statusCode: 400  # Expected - no file provided
+          think: 2
+
+      # Loop - repeat the flow multiple times
+      - think: 1
+        loop:
+          - get:
+              url: "/all"
+              expect:
+                - statusCode: 200
+          - think: 1
+        count: 3
+
+# Report configuration
+processor: "./load-tests/artillery-processor.js"
+
+# Metrics to track
+variables:
+  testStartTime: "{{ $timestamp }}"
+
+plugins:
+  metrics-by-endpoint:
+    stripQueryString: true
+    includeQueryString: false

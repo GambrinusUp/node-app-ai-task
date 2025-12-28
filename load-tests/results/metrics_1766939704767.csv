@@ -1,0 +1,15 @@
+Метрика,Значение
+Total Requests,0
+RPS (Mean),0.00
+RPS (p50),0.00
+RPS (p90),0.00
+RPS (p99),0.00
+Latency Mean (ms),0.00
+Latency p50 (ms),0
+Latency p90 (ms),0
+Latency p99 (ms),0
+Latency Min (ms),0
+Latency Max (ms),0
+Errors,77566
+Timeouts,1
+Throughput Mean (KB/s),0.00

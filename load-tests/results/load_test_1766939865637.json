@@ -1,0 +1,61 @@
+{
+  "timestamp": "2025-12-28T16:37:41.589Z",
+  "config": {
+    "url": "http://localhost:3000",
+    "connections": 10,
+    "pipelining": 1,
+    "duration": 30,
+    "requests": [
+      {
+        "path": "/",
+        "method": "GET",
+        "weight": 50
+      },
+      {
+        "path": "/all",
+        "method": "GET",
+        "weight": 30
+      },
+      {
+        "path": "/new",
+        "method": "POST",
+        "weight": 20,
+        "body": {
+          "name": "Test Image",
+          "description": "Load test image",
+          "author": "LoadTester"
+        }
+      }
+    ]
+  },
+  "metrics": {
+    "totalRequests": 1000,
+    "totalBytes": 437000,
+    "rps": {
+      "mean": 250,
+      "p50": 35,
+      "p90": 729,
+      "p99": 729,
+      "stddev": 290.85
+    },
+    "latency": {
+      "mean": 29.92,
+      "p50": 13,
+      "p90": 16,
+      "p99": 31,
+      "stddev": 158.22,
+      "min": 10,
+      "max": 1615
+    },
+    "throughput": {
+      "total": 437000,
+      "mean": 109255,
+      "p50": 15295,
+      "p90": 318719,
+      "p99": 318719
+    },
+    "errors": 0,
+    "timeouts": 0,
+    "statusCodeDistribution": {}
+  }
+}
